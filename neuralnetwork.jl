@@ -17,7 +17,7 @@ test_labels = reshape(test[!, end_table], (1, size(test, 1))) |> gpu
 test_features = Matrix(test[!, 1:end_table-1])' |> gpu
 
 #Hyperparams
-epochs = 5_000
+epochs = 1_000
 learning_rate = 0.01
 batch_size = 16
 
