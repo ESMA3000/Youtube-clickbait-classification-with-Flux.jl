@@ -1,8 +1,29 @@
-using Base.Threads, DataFrames, CSV
+using WordTokenizers, DataFrames, CSV
 include("normalization.jl")
+
+function CSVtoDataframe(path::String)::DataFrame
+    return DataFrame(CSV.File(path))
+end
 
 function remove_special_characters_regex(str::AbstractString)
     return replace(str, r"[^\w\d\s']" => "")
+end
+
+function cleanTokenizer(title::String)
+    return nltk_word_tokenize(cleanString(title))
+end
+
+function cleanString(title::String)
+    return remove_special_characters_regex(lowercase(title))
+end
+
+function nGram(title::Vector{String}, n::Int64)
+    ngrams = Vector()
+    for i in 1:length(title)-n+1
+        push!(ngrams, title[i:i+n-1])
+    end
+
+    return ngrams
 end
 
 function remove_skipwords(dict::Dict{String,Int64})::Dict{String,Int64}
@@ -113,13 +134,33 @@ function engagementRatio(views::Vector{Int64}, likes::Vector{Int64})::Vector{Flo
     return vec
 end =#
 
-function CSVtoDataframe(path::String)::DataFrame
-    return DataFrame(CSV.File(path))
+
+function PMI(vector_titles::Vector{String}, vector_clickbait::Vector{String}, p_clickbait::Float64)::Vector{Float64}
+    joined_titles = cleanString(join(vector_titles, " "))
+    joined_clickbait = cleanString(join(vector_clickbait, " "))
+    vector_scores = []
+    for title in vector_titles
+        score, pmi = 0, 0
+        title_tokens = cleanTokenizer(title)
+        n = 2
+        for ngram in nGram(title_tokens, n)
+            p_ngram = count(Regex(join(ngram, " ")), joined_titles) / size(vector_titles, 1)
+            p_joint = count(Regex(join(ngram, " ")), joined_clickbait) / size(vector_clickbait, 1)
+            pmi = log2(p_joint / (p_ngram * p_clickbait))
+            if !(isnan(pmi) || isinf(pmi))
+                score += pmi
+            else
+                pmi = 0
+            end
+        end
+        push!(vector_scores, score)
+    end
+    return vector_scores
 end
 
 function preprocessData()::DataFrame
-    df = CSVtoDataframe("ML/YTclickbait/dataset/clickbait.csv")
-    de = CSVtoDataframe("ML/YTclickbait/dataset/notClickbait.csv")
+    df = CSVtoDataframe("dataset/clickbait.csv")
+    de = CSVtoDataframe("dataset/notClickbait.csv")
     df[!, "Clickbait"] = fill(1, size(df, 1))
     de[!, "Clickbait"] = fill(0, size(de, 1))
     merge = vcat(df, de)
@@ -153,7 +194,10 @@ function preprocessData()::DataFrame
     #dislike = dislikeRatio(likes, dislikes)
 
     # Engagement ratio
-    #engagement = engagementRatio(views, likes)
+    #engagement = engagementRatio(views, likes) 
+
+    p_clickbait = size(df, 1) / (size(df, 1) + size(de, 1))
+    pmi = PMI(titles, df[!, 2], p_clickbait)
 
     # Gather normalized value to a dataframe
     return DataFrame(
@@ -163,5 +207,6 @@ function preprocessData()::DataFrame
         #Dislike=minmaxNormalizer(dislike),
         #Engagement=minmaxNormalizer(engagement),
         SpecialCharacters=minmaxNormalizer(sc_count),
+        PMI=minmaxNormalizer(pmi),
         Clickbait=clickbait)
 end
