@@ -13,6 +13,10 @@ function cleanString(title::String)::String
     return remove_special_characters_regex(lowercase(title))
 end
 
+function cleanString(title::SubString{String})::String
+    return remove_special_characters_regex(lowercase(title))
+end
+
 function cleanTokenizer(title::String)
     return nltk_word_tokenize(cleanString(title))
 end
@@ -114,27 +118,22 @@ function engagementRatio(views::Vector{Int64}, likes::Vector{Int64})::Vector{Flo
 end =#
 
 
-function PMI(vector_titles::Vector{String}, vector_clickbait::Vector{String}, p_clickbait::Float64)::Vector{Float64}
+function PMI(title::String, vector_titles::Vector{String}, vector_clickbait::Vector{String}, p_clickbait::Float64)::Float64
     joined_titles = cleanString(join(vector_titles, " "))
     joined_clickbait = cleanString(join(vector_clickbait, " "))
-    vector_scores = []
-    for title in vector_titles
-        score, pmi = 0, 0
-        title_tokens = cleanTokenizer(title)
-        n = 2
-        for ngram in nGram(title_tokens, n)
-            p_ngram = count(Regex(join(ngram, " ")), joined_titles) / size(vector_titles, 1)
-            p_joint = count(Regex(join(ngram, " ")), joined_clickbait) / size(vector_clickbait, 1)
-            pmi = log2(p_joint / (p_ngram * p_clickbait))
-            if !(isnan(pmi) || isinf(pmi))
-                score += pmi
-            else
-                pmi = 0
-            end
+    title_tokens = cleanTokenizer(title)
+    score, pmi = 0, 0
+    for ngram in nGram(title_tokens, 2)
+        p_ngram = count(Regex(join(ngram, " ")), joined_titles) / size(vector_titles, 1)
+        p_joint = count(Regex(join(ngram, " ")), joined_clickbait) / size(vector_clickbait, 1)
+        pmi = log2(p_joint / (p_ngram * p_clickbait))
+        if !(isnan(pmi) || isinf(pmi))
+            score += pmi
+        else
+            pmi = 0
         end
-        push!(vector_scores, score)
     end
-    return vector_scores
+    return score
 end
 
 function preprocessData()::DataFrame
@@ -149,6 +148,7 @@ function preprocessData()::DataFrame
     # Wordcounting
     word_set = vectorToSet(clickbait_titles)
     word_dict = removeSkipWords(wordCountDict(word_set, wordCount(word_set, clickbait_titles)))
+
     scores = [wordcountScore(title, word_dict) for title in titles]
 
     # Length of title
@@ -160,16 +160,28 @@ function preprocessData()::DataFrame
     #Caps ratio in title
     caps = [capsRatio(title) for title in titles]
 
+    p_clickbait = size(df, 1) / size(merge, 1)
+    pmi = [PMI(title, titles, clickbait_titles, p_clickbait) for title in titles]
+
     # Like/Dislike ratio
     #dislike = dislikeRatio(likes, dislikes)
 
     # Engagement ratio
     #engagement = engagementRatio(views, likes) 
 
-    p_clickbait = size(df, 1) / size(merge, 1)
-    pmi = PMI(titles, df[!, 2], p_clickbait)
-
     # Gather normalized value to a dataframe
+    processed_dataset = DataFrame(
+        Wordcount=scores,
+        CapsRatio=caps,
+        LengthTitle=title_length,
+        #Dislike=minmaxNormalizer(dislike),
+        #Engagement=minmaxNormalizer(engagement),
+        SpecialCharacters=sc_count,
+        PMIScore=pmi,
+        Clickbait=clickbait)
+
+    CSV.write("dataset/processedDataset.csv", processed_dataset)
+
     return DataFrame(
         Wordcount=minmaxNormalizer(scores),
         CapsRatio=minmaxNormalizer(caps),
@@ -179,4 +191,40 @@ function preprocessData()::DataFrame
         SpecialCharacters=minmaxNormalizer(sc_count),
         PMIScore=minmaxNormalizer(pmi),
         Clickbait=clickbait)
+end
+
+function preprocessData(title::String)::DataFrame
+    df = CSVtoDataframe("dataset/clickbait.csv")
+    de = CSVtoDataframe("dataset/notClickbait.csv")
+    merge = vcat(df, de)
+    clickbait_titles = df[!, 2]
+    titles = merge[!, 2]
+
+    # Wordcounting
+    word_set = vectorToSet(clickbait_titles)
+    word_dict = removeSkipWords(wordCountDict(word_set, wordCount(word_set, clickbait_titles)))
+    scores = wordcountScore(title, word_dict)
+
+    # Length of title
+    title_length = Float64(length(title))
+
+    #Counting special character in title
+    sc_count = countSpecialCharacters(title)
+
+    #Caps ratio in title
+    caps = capsRatio(title)
+
+    p_clickbait = size(df, 1) / size(merge, 1)
+    pmi = PMI(title, titles, clickbait_titles, p_clickbait)
+
+    # Gather normalized value to a dataframe
+    dataset = CSVtoDataframe("dataset/processedDataset.csv")
+    return DataFrame(
+        Wordcount=minmaxNormalizer(scores, dataset[!, "Wordcount"]),
+        CapsRatio=minmaxNormalizer(caps, dataset[!, "CapsRatio"]),
+        LengthTitle=minmaxNormalizer(title_length, dataset[!, "LengthTitle"]),
+        #Dislike=minmaxNormalizer(dislike),
+        #Engagement=minmaxNormalizer(engagement),
+        SpecialCharacters=minmaxNormalizer(sc_count, dataset[!, "SpecialCharacters"]),
+        PMIScore=minmaxNormalizer(pmi, dataset[!, "PMIScore"]))
 end
