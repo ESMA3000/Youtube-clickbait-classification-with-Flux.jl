@@ -5,7 +5,7 @@ include("preprocessing.jl")
 processed_dataframe = preprocessData()
 
 # Split data into train and test sets
-(train, test) = splitobs(shuffleobs(processed_dataframe), at=0.75);
+(train, test) = splitobs(shuffleobs(processed_dataframe), at=0.7);
 end_table, end_samples = size(train, 2), size(train, 1)
 
 #Only use onehot encoding for multi class classification

@@ -1,4 +1,4 @@
-using WordTokenizers, DataFrames, CSV
+using WordTokenizers, DataFrames, CSV, JSON
 include("normalization.jl")
 
 function CSVtoDataframe(path::String)::DataFrame
@@ -35,7 +35,7 @@ function nGram(title::Vector{String}, n::Int64)
 end
 
 function removeSkipWords(dict::Dict{String,Int64})::Dict{String,Int64}
-    file = open("skip_words.txt", "r")
+    file = open("dataset/skip_words.txt", "r")
     skip_words = split(read(file, String), ",")
     delete!(dict, "")
     for word in skip_words
@@ -145,12 +145,14 @@ function preprocessData()::DataFrame
     merge = vcat(df, de)
     titles, views, likes, dislikes, clickbait = merge[!, 2], merge[!, 3], merge[!, 4], merge[!, 5], merge[!, 7]
 
-    # Wordcounting
+    # Wordcounting !!!! Introduce a lemmatizer to improve this
     word_set = vectorToSet(clickbait_titles)
     word_dict = removeSkipWords(wordCountDict(word_set, wordCount(word_set, clickbait_titles)))
-
     scores = [wordcountScore(title, word_dict) for title in titles]
 
+    open("dataset/wordcount.json", "w") do file
+        write(file, JSON.json(word_dict))
+    end
     # Length of title
     title_length = [Float64(length(title)) for title in titles]
 
