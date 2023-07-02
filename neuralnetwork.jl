@@ -61,7 +61,7 @@ println("Onecold accuracy:", mean(cold .== test_labels) * 100) =#
 
 a = []
 for i in eachindex(test[!, end_table])
-    push!(a, test1[i] > 0.90 ? 1 : 0)
+    push!(a, test1[i] > 0.98 ? 1 : 0)
 end
 println("Accuracy on testset:", mean(a .== test[!, end_table]) * 100)
 

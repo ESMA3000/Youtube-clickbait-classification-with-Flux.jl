@@ -1,4 +1,4 @@
-using WordTokenizers, DataFrames, CSV, JSON
+using TextAnalysis, WordTokenizers, DataFrames, CSV, JSON
 include("normalization.jl")
 
 function CSVtoDataframe(path::String)::DataFrame
@@ -13,7 +13,7 @@ function cleanString(title::String)::String
     return remove_special_characters_regex(lowercase(title))
 end
 
-function cleanString(title::SubString{String})::String
+function cleanString(title::Union{String,SubString{String}})::String
     return remove_special_characters_regex(lowercase(title))
 end
 
@@ -23,6 +23,12 @@ end
 
 function countSpecialCharacters(string::String)::Float64
     return count(r"[^a-zA-Z0-9\s]", string)
+end
+
+function quickStemmer(string::Union{String,SubString{String}})
+    sd = StringDocument(string)
+    stem!(sd)
+    return text(sd)
 end
 
 function nGram(title::Vector{String}, n::Int64)
@@ -44,11 +50,24 @@ function removeSkipWords(dict::Dict{String,Int64})::Dict{String,Int64}
     return dict
 end
 
+function pushClickbaitWords(dict::Dict{String,Int64})::Dict{String,Int64}
+    file = open("dataset/common_clickbaitwords.txt", "r")
+    clickbait_words = [quickStemmer(word) for word in split(read(file, String), ",")]
+    for word in clickbait_words
+        if !(haskey(dict, word))
+            push!(dict, word => 10)
+        else
+            dict[word] = dict[word] * 3
+        end
+    end
+    return dict
+end
+
 function vectorToSet(vector::Vector{String})::Set{String}
     set_words = Set()
     for string in vector
         for word in split(string, " ")
-            push!(set_words, cleanString(word))
+            push!(set_words, quickStemmer(cleanString(word)))
         end
     end
     return set_words
@@ -56,9 +75,9 @@ end
 
 function wordCount(count_words::Set{String}, title_strings::Vector{String})::Vector{Int64}
     total = Vector()
-    clean = cleanString(join(title_strings, " "))
+    full_string = quickStemmer(cleanString(join(title_strings, " ")))
     for word in count_words
-        push!(total, count(Regex(" " * word * " "), clean))
+        push!(total, count(Regex(" " * word * " "), full_string))
     end
     return total
 end
@@ -74,18 +93,20 @@ end
 
 function wordcountScore(title::String, word_count::Dict{String,Int64})::Float64
     score = 0
-    cleaned = split(cleanString(title), " ")
+    cleaned = split(quickStemmer(cleanString(title)), " ")
     for word in cleaned
         score += get(word_count, word, 0)
     end
-    return (score / length(cleaned) / 100)
+    return score
 end
 
 function capsRatio(title::String)::Float64
     clean_vec = split(remove_special_characters_regex(title), " ")
     caps = 0
     for word in clean_vec
-        if word == uppercase(word)
+        if isempty(word)
+            continue
+        elseif word == uppercase(word) && !(isdigit(AbstractChar(word[1])))
             caps += 1
         end
     end
@@ -119,9 +140,9 @@ end =#
 
 
 function PMI(title::String, vector_titles::Vector{String}, vector_clickbait::Vector{String}, p_clickbait::Float64)::Float64
-    joined_titles = cleanString(join(vector_titles, " "))
-    joined_clickbait = cleanString(join(vector_clickbait, " "))
-    title_tokens = cleanTokenizer(title)
+    joined_titles = quickStemmer(cleanString(join(vector_titles, " ")))
+    joined_clickbait = quickStemmer(cleanString(join(vector_clickbait, " ")))
+    title_tokens = cleanTokenizer(quickStemmer(title))
     score, pmi = 0, 0
     for ngram in nGram(title_tokens, 2)
         p_ngram = count(Regex(join(ngram, " ")), joined_titles) / size(vector_titles, 1)
@@ -147,11 +168,12 @@ function preprocessData()::DataFrame
 
     # Wordcounting !!!! Introduce a lemmatizer to improve this
     word_set = vectorToSet(clickbait_titles)
-    word_dict = removeSkipWords(wordCountDict(word_set, wordCount(word_set, clickbait_titles)))
-    scores = [wordcountScore(title, word_dict) for title in titles]
+    word_dict = wordCountDict(word_set, wordCount(word_set, clickbait_titles))
+    word_dict_modi = pushClickbaitWords(removeSkipWords(word_dict))
+    scores = [wordcountScore(title, word_dict_modi) for title in titles]
 
     open("dataset/wordcount.json", "w") do file
-        write(file, JSON.json(word_dict))
+        write(file, JSON.json(word_dict_modi))
     end
     # Length of title
     title_length = [Float64(length(title)) for title in titles]
@@ -203,8 +225,7 @@ function preprocessData(title::String)::DataFrame
     titles = merge[!, 2]
 
     # Wordcounting
-    word_set = vectorToSet(clickbait_titles)
-    word_dict = removeSkipWords(wordCountDict(word_set, wordCount(word_set, clickbait_titles)))
+    word_dict = Dict(JSON.parsefile("dataset/wordcount.json", dicttype=Dict{String,Int64}))
     scores = wordcountScore(title, word_dict)
 
     # Length of title

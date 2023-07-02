@@ -1,8 +1,11 @@
 using Flux, BSON
 include("preprocessing.jl")
-preprocessData("10 Secret Tricks to Lose Weight Without Exercise!")
-test = Matrix(preprocessData(("10 Secret Tricks to Lose Weight Without Exercise!")))'
 
-BSON.@load "clickbait_model.bson" model
+function classifyClickbait(title::String)
+    BSON.@load "clickbait_model.bson" model
+    data = Matrix(preprocessData((title)))'
+    Bool(model(data)[1])
+end
 
-test = model(test)
+# Classify a title here
+classifyClickbait("DON'T WATCH THIS!")
