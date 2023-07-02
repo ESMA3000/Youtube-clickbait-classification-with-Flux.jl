@@ -5,7 +5,7 @@ include("preprocessing.jl")
 processed_dataframe = preprocessData()
 
 # Split data into train and test sets
-(train, test) = splitobs(shuffleobs(processed_dataframe), at=0.75);
+(train, test) = splitobs(shuffleobs(processed_dataframe), at=0.7);
 end_table, end_samples = size(train, 2), size(train, 1)
 
 #Only use onehot encoding for multi class classification
@@ -56,14 +56,18 @@ end
 test1 = model(test_features |> gpu)
 
 #Coldone accuracy
-cold = Flux.onecold(test1) .- 1
-println("Onecold accuracy:", mean(cold .== test_labels) * 100)
+#= cold = Flux.onecold(test1) .- 1
+println("Onecold accuracy:", mean(cold .== test_labels) * 100) =#
 
 a = []
 for i in eachindex(test[!, end_table])
-    push!(a, test1[i] > 0.90 ? 1 : 0)
+    push!(a, test1[i] > 0.98 ? 1 : 0)
 end
-println("Me own accuracy:", mean(a .== test[!, end_table]) * 100)
+println("Accuracy on testset:", mean(a .== test[!, end_table]) * 100)
 
 model = model |> cpu
-BSON.@save "ML/clickbait_model.bson" model
+BSON.@save "clickbait_model.bson" model
+
+#= test2 = model(test_features |> cpu)
+test2 |> print
+Flux.onecold(test2) .- 1 |> print =#
