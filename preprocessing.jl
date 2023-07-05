@@ -31,7 +31,7 @@ function quickStemmer(string::Union{String,SubString{String}})
     return text(sd)
 end
 
-function nGram(title::Vector{String}, n::Int64)
+function nGram(title::Vector{String}, n::Int64)::Vector{Vector{String}}
     ngrams = Vector()
     for i in 1:length(title)-n+1
         push!(ngrams, title[i:i+n-1])
