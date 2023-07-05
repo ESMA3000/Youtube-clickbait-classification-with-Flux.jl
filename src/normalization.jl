@@ -6,7 +6,7 @@ function minmaxNormalizer(vector::Vector{Float64})::Vector{Float64}
     return vector
 end
 
-function minmaxNormalizer(value::Float64, vector::Vector{Float64})::Float64
+function minmaxNormalizer(value::Float64, vector::Vector{Float64})::Float32
     min = value < minimum(vector) ? value : minimum(vector)
     max = value > maximum(vector) ? value : maximum(vector)
     min, max = minimum(vector), maximum(vector)

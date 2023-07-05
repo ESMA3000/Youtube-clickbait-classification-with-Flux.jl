@@ -158,8 +158,8 @@ function PMI(title::String, vector_titles::Vector{String}, vector_clickbait::Vec
 end
 
 function preprocessData()::DataFrame
-    df = CSVtoDataframe("dataset/clickbait.csv")
-    de = CSVtoDataframe("dataset/notClickbait.csv")
+    df = CSVtoDataframe("src/dataset/clickbait.csv")
+    de = CSVtoDataframe("src/dataset/notClickbait.csv")
     df[!, "Clickbait"] = fill(1, size(df, 1))
     de[!, "Clickbait"] = fill(0, size(de, 1))
     clickbait_titles = df[!, 2]
