@@ -1,0 +1,12 @@
+name = "Youtube-clickbait-classification-with-Flux"
+uuid = "df62fbec-c4b6-47af-85e5-e3409bd9a33f"
+authors = ["Kasper Masznicz <kmaszn19@student.aau.dk>"]
+version = "0.1.0"
+
+[deps]
+BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+TextAnalysis = "a2db99b7-8b79-58f8-94bf-bbc811eef33d"
+WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
