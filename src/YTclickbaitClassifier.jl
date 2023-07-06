@@ -1,5 +1,9 @@
 module YTclickbaitClassifier
-include("classifier.jl")
-classifyByTitle(title) = classifyClickbait(title)
+module preprocessing
+include("preprocessing.jl")
+export countSpecialCharacters
 end
-
+module classifier
+include("classifier.jl")
+end
+end

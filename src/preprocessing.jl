@@ -5,19 +5,15 @@ function CSVtoDataframe(path::String)::DataFrame
     return DataFrame(CSV.File(path))
 end
 
-function remove_special_characters_regex(str::AbstractString)
+function removeSpecialCharacters(str::AbstractString)
     return replace(str, r"[^\w\d\s']" => "")
 end
 
-function cleanString(title::String)::String
-    return remove_special_characters_regex(lowercase(title))
-end
-
 function cleanString(title::Union{String,SubString{String}})::String
-    return remove_special_characters_regex(lowercase(title))
+    return removeSpecialCharacters(lowercase(title))
 end
 
-function cleanTokenizer(title::String)
+function cleanTokenizer(title::String)::Vector{String}
     return nltk_word_tokenize(cleanString(title))
 end
 
@@ -25,7 +21,7 @@ function countSpecialCharacters(string::String)::Float64
     return count(r"[^a-zA-Z0-9\s]", string)
 end
 
-function quickStemmer(string::Union{String,SubString{String}})
+function quickStemmer(string::Union{String,SubString{String}})::String
     sd = StringDocument(string)
     stem!(sd)
     return text(sd)
@@ -101,7 +97,7 @@ function wordcountScore(title::String, word_count::Dict{String,Int64})::Float64
 end
 
 function capsRatio(title::String)::Float64
-    clean_vec = split(remove_special_characters_regex(title), " ")
+    clean_vec = split(removeSpecialCharacters(title), " ")
     caps = 0
     for word in clean_vec
         if isempty(word)
