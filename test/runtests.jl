@@ -1,4 +1,4 @@
-using Test, TestItems
+using Test
 include("src/YTclickbaitClassifier.jl")
 
 @test countSpecialCharacters("This! No? Dont @ me then") == 3
