@@ -1,5 +1,5 @@
 using Test
-include("src/YTclickbaitClassifier.jl")
+include("src/preprocess.jl")
 
 @test countSpecialCharacters("This! No? Dont @ me then") == 3
 @test nGram(cleanTokenizer("Hello this is a test for nGram"), 2) == [["hello", "this"], ["this", "is"], ["is", "a"], ["a", "test"], ["test", "for"], ["for", "ngram"]]
