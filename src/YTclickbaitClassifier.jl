@@ -8,7 +8,7 @@ using .Preprocessing
 export CSVtoDataframe, removeSpecialCharacters, cleanString,
     cleanTokenizer, countSpecialCharacters, quickStemmer,
     nGram, removeSkipWords, pushClickbaitWords, vectorToSet,
-    wordCount, wordCountDict, wordcountScore, capsRatio, PMI,
+    wordCount, wordCountDict, wordCountScore, capsRatio, PMI,
     preprocessData
 
 #= export classifyClickbait

@@ -1,13 +1,10 @@
 using Flux, BSON, YTclickbaitClassifier
-dataset = CSVtoDataframe("dataset/processedDataset.csv")
-test = preprocessData("DONT WATCH!")
-for col in names(test)
-    col = minmaxNormalizer(test[1, col], dataset[!, col])
-end
-test
 
 function classifyClickbait(title::String)::Bool
+    dataset = CSVtoDataframe("dataset/processedDataset.csv")
     BSON.@load "src/clickbait_model.bson" model
-    data = Matrix(preprocessData((title)))'
+    title = preprocessData(title)
+    data = reshape([minmaxNormalizer(title[1, col], dataset[!, col]) for col in names(title)], size(title, 2), 1)
     return Bool(model(data)[1] >= 1 ? 1 : 0)
 end
+

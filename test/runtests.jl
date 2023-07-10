@@ -1,19 +1,13 @@
 using Test
 
-#Doesn't work without import
-#= @testitem "countSpecialCharacters test" begin
-    res = countSpecialCharacters("This! No? Dont @ me then")
-    @test typeof(res) == Float64
-    @test res == 3
-end =#
-@testset "All tests" begin
+@testset "Test Suite" begin
     @testset "preprocessing" begin
         include("test_preprocessing.jl")
     end
     @testset "normalizer" begin
-
+        include("test_normalization.jl")
     end
     @testset "classifier" begin
-
+        include("test_classifier.jl")
     end
 end
