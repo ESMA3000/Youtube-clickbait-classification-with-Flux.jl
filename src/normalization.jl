@@ -1,3 +1,7 @@
+module normalizer
+
+export minmaxNormalizer
+
 function minmaxNormalizer(vector::Vector{Float64})::Vector{Float64}
     min, max = minimum(vector), maximum(vector)
     for i in 1:length(vector)
@@ -11,4 +15,6 @@ function minmaxNormalizer(value::Float64, vector::Vector{Float64})::Float32
     max = value > maximum(vector) ? value : maximum(vector)
     min, max = minimum(vector), maximum(vector)
     return ((value - min) / (max - min))
+end
+
 end

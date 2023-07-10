@@ -17,7 +17,7 @@ include("../src/preprocessing.jl")
 end =#
 @testset "All tests" begin
     @testset "preprocessing" begin
-
+        include("test_preprocessing.jl")
     end
     @testset "normalizer" begin
 

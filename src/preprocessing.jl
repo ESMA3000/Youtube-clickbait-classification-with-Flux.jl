@@ -1,5 +1,11 @@
+module Preprocessing
 using TextAnalysis, WordTokenizers, DataFrames, CSV, JSON
-include("normalization.jl")
+
+export CSVtoDataframe, removeSpecialCharacters, cleanString,
+    cleanTokenizer, countSpecialCharacters, quickStemmer,
+    nGram, removeSkipWords, pushClickbaitWords, vectorToSet,
+    wordCount, wordCountDict, wordcountScore, capsRatio, PMI,
+    preprocessData
 
 function CSVtoDataframe(path::String)::DataFrame
     return DataFrame(CSV.File(path))
@@ -87,7 +93,7 @@ function wordCountDict(words::Set{String}, total_count::Vector{Int64})::Dict{Str
     return dict
 end
 
-function wordcountScore(title::String, word_count::Dict{String,Int64})::Float64
+function wordCountScore(title::String, word_count::Dict{String,Int64})::Float64
     score = 0
     cleaned = split(quickStemmer(cleanString(title)), " ")
     for word in cleaned
@@ -166,7 +172,7 @@ function preprocessData()::DataFrame
     word_set = vectorToSet(clickbait_titles)
     word_dict = wordCountDict(word_set, wordCount(word_set, clickbait_titles))
     word_dict_modi = pushClickbaitWords(removeSkipWords(word_dict))
-    scores = [wordcountScore(title, word_dict_modi) for title in titles]
+    scores = [wordCountScore(title, word_dict_modi) for title in titles]
 
     open("dataset/wordcount.json", "w") do file
         write(file, JSON.json(word_dict_modi))
@@ -202,15 +208,7 @@ function preprocessData()::DataFrame
 
     CSV.write("dataset/processedDataset.csv", processed_dataset)
 
-    return DataFrame(
-        Wordcount=minmaxNormalizer(scores),
-        CapsRatio=minmaxNormalizer(caps),
-        LengthTitle=minmaxNormalizer(title_length),
-        #Dislike=minmaxNormalizer(dislike),
-        #Engagement=minmaxNormalizer(engagement),
-        SpecialCharacters=minmaxNormalizer(sc_count),
-        PMIScore=minmaxNormalizer(pmi),
-        Clickbait=clickbait)
+    return processed_dataset
 end
 
 function preprocessData(title::String)::DataFrame
@@ -222,7 +220,7 @@ function preprocessData(title::String)::DataFrame
 
     # Wordcounting
     word_dict = Dict(JSON.parsefile("dataset/wordcount.json", dicttype=Dict{String,Int64}))
-    scores = wordcountScore(title, word_dict)
+    scores = wordCountScore(title, word_dict)
 
     # Length of title
     title_length = Float64(length(title))
@@ -237,13 +235,14 @@ function preprocessData(title::String)::DataFrame
     pmi = PMI(title, titles, clickbait_titles, p_clickbait)
 
     # Gather normalized value to a dataframe
-    dataset = CSVtoDataframe("dataset/processedDataset.csv")
     return DataFrame(
-        Wordcount=minmaxNormalizer(scores, dataset[!, "Wordcount"]),
-        CapsRatio=minmaxNormalizer(caps, dataset[!, "CapsRatio"]),
-        LengthTitle=minmaxNormalizer(title_length, dataset[!, "LengthTitle"]),
-        #Dislike=minmaxNormalizer(dislike),
-        #Engagement=minmaxNormalizer(engagement),
-        SpecialCharacters=minmaxNormalizer(sc_count, dataset[!, "SpecialCharacters"]),
-        PMIScore=minmaxNormalizer(pmi, dataset[!, "PMIScore"]))
+        Wordcount=scores,
+        CapsRatio=caps,
+        LengthTitle=title_length,
+        #Dislike=dislike,
+        #Engagement=ngagement,
+        SpecialCharacters=sc_count,
+        PMIScore=pmi)
+end
+
 end
