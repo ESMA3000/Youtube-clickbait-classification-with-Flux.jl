@@ -1,4 +1,4 @@
-using Test, TestItems
+using Test, TestItemRunner
 
 @testset "preprocess" begin
     include("test_preprocess.jl")
