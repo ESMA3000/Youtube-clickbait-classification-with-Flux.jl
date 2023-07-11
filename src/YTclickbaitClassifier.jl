@@ -1,21 +1,17 @@
 module YTclickbaitClassifier
-include("normalization.jl")
-using .normalizer
+include("normalize.jl")
+using .normalize
 export minmaxNormalizer
 
-include("preprocessing.jl")
-using .Preprocessing
+include("preprocess.jl")
+using .preprocess
 export CSVtoDataframe, removeSpecialCharacters, cleanString,
     cleanTokenizer, countSpecialCharacters, quickStemmer,
     nGram, removeSkipWords, pushClickbaitWords, vectorToSet,
     wordCount, wordCountDict, wordCountScore, capsRatio, PMI,
-    preprocessData
+    preprocessData, getProcessedDataset, updatePreprocessedData
 
-#= export classifyClickbait
-function classifyClickbait(title::String)::Bool
-    BSON.@load "src/clickbait_model.bson" model
-    data = Matrix(preprocessData((title)))'
-    return Bool(model(data)[1] >= 1 ? 1 : 0)
-end
- =#
+include("train.jl")
+using .train
+export trainModel, loadModel
 end

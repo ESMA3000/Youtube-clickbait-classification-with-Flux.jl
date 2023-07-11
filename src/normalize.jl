@@ -1,4 +1,4 @@
-module normalizer
+module normalize
 
 export minmaxNormalizer
 

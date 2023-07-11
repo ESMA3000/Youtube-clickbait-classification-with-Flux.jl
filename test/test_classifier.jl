@@ -1,3 +1,4 @@
+using Test
 include("../src/classifier.jl")
 
 @test classifyClickbait("DON'T Watch This!") == true

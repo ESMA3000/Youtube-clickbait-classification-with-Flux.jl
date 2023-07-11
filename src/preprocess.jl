@@ -1,11 +1,11 @@
-module Preprocessing
+module preprocess
 using TextAnalysis, WordTokenizers, DataFrames, CSV, JSON
 
 export CSVtoDataframe, removeSpecialCharacters, cleanString,
     cleanTokenizer, countSpecialCharacters, quickStemmer,
     nGram, removeSkipWords, pushClickbaitWords, vectorToSet,
     wordCount, wordCountDict, wordCountScore, capsRatio, PMI,
-    preprocessData
+    preprocessData, getProcessedDataset, updatePreprocessedData
 
 function CSVtoDataframe(path::String)::DataFrame
     return DataFrame(CSV.File(path))
@@ -159,7 +159,7 @@ function PMI(title::String, vector_titles::Vector{String}, vector_clickbait::Vec
     return score
 end
 
-function preprocessData()::DataFrame
+function updatePreprocessedData()
     df = CSVtoDataframe("src/dataset/clickbait.csv")
     de = CSVtoDataframe("src/dataset/notClickbait.csv")
     df[!, "Clickbait"] = fill(1, size(df, 1))
@@ -168,7 +168,6 @@ function preprocessData()::DataFrame
     merge = vcat(df, de)
     titles, views, likes, dislikes, clickbait = merge[!, 2], merge[!, 3], merge[!, 4], merge[!, 5], merge[!, 7]
 
-    # Wordcounting !!!! Introduce a lemmatizer to improve this
     word_set = vectorToSet(clickbait_titles)
     word_dict = wordCountDict(word_set, wordCount(word_set, clickbait_titles))
     word_dict_modi = pushClickbaitWords(removeSkipWords(word_dict))
@@ -207,8 +206,10 @@ function preprocessData()::DataFrame
         Clickbait=clickbait)
 
     CSV.write("dataset/processedDataset.csv", processed_dataset)
+end
 
-    return processed_dataset
+function getProcessedDataset()::DataFrame
+    return CSVtoDataframe("dataset/processedDataset.csv")
 end
 
 function preprocessData(title::String)::DataFrame
@@ -239,8 +240,6 @@ function preprocessData(title::String)::DataFrame
         Wordcount=scores,
         CapsRatio=caps,
         LengthTitle=title_length,
-        #Dislike=dislike,
-        #Engagement=ngagement,
         SpecialCharacters=sc_count,
         PMIScore=pmi)
 end

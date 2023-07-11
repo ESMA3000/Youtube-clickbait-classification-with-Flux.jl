@@ -1,13 +1,22 @@
-using Test
+using Test, TestItems
 
-@testset "Test Suite" begin
-    @testset "preprocessing" begin
-        include("test_preprocessing.jl")
-    end
-    @testset "normalizer" begin
-        include("test_normalization.jl")
-    end
-    @testset "classifier" begin
-        include("test_classifier.jl")
-    end
+@testset "preprocess" begin
+    include("test_preprocess.jl")
 end
+@testset "normalize" begin
+    include("test_normalize.jl")
+end
+@testset "classifier" begin
+    include("test_classifier.jl")
+end
+
+#Nice to have for vs code testing.
+#= @testitem "preprocessing" begin
+    include("test_preprocess.jl")
+end
+@testitem "normalizer" begin
+    include("test_normalize.jl")
+end
+@testitem "classifier" begin
+    include("test_classifier.jl")
+end =#
