@@ -6,17 +6,17 @@ end
 @testset "normalize" begin
     include("test_normalize.jl")
 end
-@testset "classifier" begin
-    include("test_classifier.jl")
+@testset "train" begin
+    include("test_train.jl")
 end
 
-#Nice to have for vs code testing.
+#Nice to have for vscode testing.
 #= @testitem "preprocessing" begin
     include("test_preprocess.jl")
 end
 @testitem "normalizer" begin
     include("test_normalize.jl")
 end
-@testitem "classifier" begin
-    include("test_classifier.jl")
+@testitem "train" begin
+    include("test_train.jl")
 end =#
